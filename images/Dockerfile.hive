@@ -1,0 +1,44 @@
+FROM openjdk:8-jdk-slim-stretch
+
+# Hadoop configuration
+ENV INSTALL_ROOT=/opt
+ENV HADOOP_GROUP=hadoop
+ENV HADOOP_USER=hadoop
+ENV HADOOP_VERSION=3.2.1
+ENV AWS_JAVA_SDK_VERSION=1.11.375
+ENV POSTGRESQL_JDBC_DRIVER_VERSION=42.2.4
+ENV HADOOP_HOME=${INSTALL_ROOT}/hadoop
+ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+
+RUN apt update && \
+    apt install -y --no-install-recommends sudo libdigest-sha-perl curl python3 jq vim net-tools netcat procps telnet && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p ${INSTALL_ROOT} && \
+    groupadd ${HADOOP_GROUP} && \
+    useradd -d ${INSTALL_ROOT} -g ${HADOOP_GROUP} ${HADOOP_USER} && \
+    chown -R ${HADOOP_USER}:${HADOOP_GROUP} ${INSTALL_ROOT} && \
+    chmod 775 ${INSTALL_ROOT}
+COPY scripts/common.sh ${INSTALL_ROOT}
+
+COPY scripts/hadoop-install.sh tarballs/hadoop* ${INSTALL_ROOT}/
+RUN chmod +x ${INSTALL_ROOT}/hadoop-install.sh && ${INSTALL_ROOT}/hadoop-install.sh
+
+# Hive configuration
+ENV HIVE_VERSION=3.1.2
+ENV HIVE_HOME=${INSTALL_ROOT}/hive
+ENV HIVE_CONF_DIR=${HIVE_HOME}/conf
+ENV HIVE_USER=hive
+ENV HIVE_ROLE=metastore
+
+COPY scripts/hive-install.sh tarballs/apache-hive* ${INSTALL_ROOT}/
+RUN useradd -M -d ${HIVE_HOME} -g ${HADOOP_GROUP} ${HIVE_USER} && \
+    chmod +x ${INSTALL_ROOT}/hive-install.sh && \
+    ${INSTALL_ROOT}/hive-install.sh
+
+COPY scripts/hive-docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+USER ${HIVE_USER}
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

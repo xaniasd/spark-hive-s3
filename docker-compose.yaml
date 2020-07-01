@@ -1,0 +1,74 @@
+version: '3.5'
+
+services:
+  localstack:
+    image: localstack/localstack-light
+    ports:
+    - 4572:4572
+    - 8082:8082
+    environment:
+      SERVICES: 's3:4572'
+      PORT_WEB_UI: '8082'
+      DATA_DIR: /tmp/localstack/data
+    volumes:
+    - localstack:/tmp/localstack
+    - ./conf/localstack/init.sh:/docker-entrypoint-initaws.d/init.sh
+  db:
+    image: postgres:latest
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_DB: hive
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hivesecret
+    volumes:
+    - postgres:/var/lib/postgresql/data
+  hive-metastore:
+    build:
+      context: ./images
+      dockerfile: Dockerfile.hive
+    restart: on-failure
+    volumes:
+    - ./conf/hive/hive-site.xml:/opt/hive/conf/hive-site.xml
+    - ./conf/hive/hivemetastore-site.xml:/opt/hive/conf/hivemetastore-site.xml
+  spark-master:
+    build:
+      context: ./images
+      dockerfile: Dockerfile.spark
+    restart: on-failure
+    ports:
+    - 8080:8080
+    environment:
+      SPARK_ROLE: master
+    volumes:
+    - ./conf/spark/hive-site.xml:/opt/spark/conf/hive-site.xml
+    - ./conf/spark/log4j.properties:/opt/spark/conf/log4j.properties
+    - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+  spark-worker:
+    build:
+      context: ./images
+      dockerfile: Dockerfile.spark
+    restart: on-failure
+    environment:
+      SPARK_ROLE: worker
+      SPARK_MASTER_HOST: spark-master
+    volumes:
+    - ./conf/spark/hive-site.xml:/opt/spark/conf/hive-site.xml
+    - ./conf/spark/log4j.properties:/opt/spark/conf/log4j.properties
+    - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+  spark-edge:
+    build:
+      context: ./images
+      dockerfile: Dockerfile.spark
+    environment:
+      SPARK_ROLE: edge
+      SPARK_MASTER_HOST: spark-master
+    volumes:
+    - ./conf/spark/hive-site.xml:/opt/spark/conf/hive-site.xml
+    - ./conf/spark/log4j.properties:/opt/spark/conf/log4j.properties
+    - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+    - "${SOURCE_DIR}:/opt/spark/src"
+
+volumes:
+  localstack: {}
+  postgres: {}

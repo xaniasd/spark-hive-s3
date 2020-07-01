@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <!-- See https://cwiki.apache.org/confluence/display/Hive/HiveReplicationv2Development#HiveReplicationv2Development-MetastorenotificationAPIsecurity -->
+    <property>
+    <name>fs.default.name</name>
+    <value>s3a://data/hive</value>
+    </property>
+    <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+    </property>
+    <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+    </property>
+    <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://localstack:4572</value>
+    </property>
+    <property>
+    <name>fs.s3a.aws.credentials.provider</name>
+    <value>org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider</value>
+    </property>
+    <property>
+    <name>fs.s3a.multiobjectdelete.enable</name>
+    <value>false</value>
+    </property>
+    <property>
+    <name>fs.s3a.change.detection.version.required</name>
+    <value>false</value>
+    </property>
+    <property>
+    <name>fs.s3a.impl</name>
+    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+    </property>
+    <property>
+    <name>hive.exec.scratchdir</name>
+    <value>s3a://data/tmp/hive-scratch</value>
+    <description>Scratch space on s3</description>
+    </property>
+</configuration>

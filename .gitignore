@@ -1,0 +1,6 @@
+# downloaded binaries
+images/tarballs/*
+!images/tarballs/.gitkeep
+
+# IDEs
+.vscode
